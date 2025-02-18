@@ -1,92 +1,14 @@
-# tp-scaffold
+Trabajo practico de Sistemas Operativos segundo cuatrimestre 2024
+En grupos de 5 integrantes se desarrollo
 
-Esta es una plantilla de proyecto diseñada para generar un TP de Sistemas
-Operativos de la UTN FRBA.
+**Objetivos**
+  Adquirir conceptos prácticos del uso de las distintas herramientas de programación e interfaces (APIs) que brindan los sistemas operativos.
+  Entienda aspectos del diseño de un sistema operativo.
+  Afirme diversos conceptos teóricos de la materia mediante la implementación práctica de algunos de ellos.
+  Se familiarice con técnicas de programación de sistemas, como el empleo de makefiles, archivos de configuración y archivos de log.
+  Conozca con grado de detalle la operatoria de Linux mediante la utilización de un lenguaje de programación de relativamente bajo nivel como C.
 
-## Dependencias
+**Sistema operativo simplificado**
+  Debido al fin académico del trabajo práctico, los conceptos reflejados son, en general, versiones simplificadas o alteradas de los componentes reales de hardware y 
+  de sistemas operativos vistos en las clases, a fin de resaltar aspectos de diseño o simplificar su implementación.
 
-Para poder compilar y ejecutar el proyecto, es necesario tener instalada la
-biblioteca [so-commons-library] de la cátedra:
-
-```bash
-git clone https://github.com/sisoputnfrba/so-commons-library
-cd so-commons-library
-make debug
-make install
-```
-
-## Compilación y ejecución
-
-Cada módulo del proyecto se compila de forma independiente a través de un
-archivo `makefile`. Para compilar un módulo, es necesario ejecutar el comando
-`make` desde la carpeta correspondiente.
-
-El ejecutable resultante de la compilación se guardará en la carpeta `bin` del
-módulo. Ejemplo:
-
-```sh
-cd kernel
-make
-./bin/kernel
-```
-
-## Importar desde Visual Studio Code
-
-Para importar el workspace, debemos abrir el archivo `tp.code-workspace` desde
-la interfaz o ejecutando el siguiente comando desde la carpeta raíz del
-repositorio:
-
-```bash
-code tp.code-workspace
-```
-
-## Checkpoint
-
-Para cada checkpoint de control obligatorio, se debe crear un tag en el
-repositorio con el siguiente formato:
-
-```
-checkpoint-{número}
-```
-
-Donde `{número}` es el número del checkpoint, ejemplo: `checkpoint-1`.
-
-Para crear un tag y subirlo al repositorio, podemos utilizar los siguientes
-comandos:
-
-```bash
-git tag -a checkpoint-{número} -m "Checkpoint {número}"
-git push origin checkpoint-{número}
-```
-
-> [!WARNING]
-> Asegúrense de que el código compila y cumple con los requisitos del checkpoint
-> antes de subir el tag.
-
-## Entrega
-
-Para desplegar el proyecto en una máquina Ubuntu Server, podemos utilizar el
-script [so-deploy] de la cátedra:
-
-```bash
-git clone https://github.com/sisoputnfrba/so-deploy.git
-cd so-deploy
-./deploy.sh -r=release -p=utils -p=kernel -p=cpu -p=memoria -p=filesystem "tp-{año}-{cuatri}-{grupo}"
-```
-
-El mismo se encargará de instalar las Commons, clonar el repositorio del grupo
-y compilar el proyecto en la máquina remota.
-
-> [!NOTE]
-> Ante cualquier duda, pueden consultar la documentación en el repositorio de
-> [so-deploy], o utilizar el comando `./deploy.sh --help`.
-
-## Guías útiles
-
-- [Cómo interpretar errores de compilación](https://docs.utnso.com.ar/primeros-pasos/primer-proyecto-c#errores-de-compilacion)
-- [Cómo utilizar el debugger](https://docs.utnso.com.ar/guias/herramientas/debugger)
-- [Cómo configuramos Visual Studio Code](https://docs.utnso.com.ar/guias/herramientas/code)
-- **[Guía de despliegue de TP](https://docs.utnso.com.ar/guías/herramientas/deploy)**
-
-[so-commons-library]: https://github.com/sisoputnfrba/so-commons-library
-[so-deploy]: https://github.com/sisoputnfrba/so-deploy
