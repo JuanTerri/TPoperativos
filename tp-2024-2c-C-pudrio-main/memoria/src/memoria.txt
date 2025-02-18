@@ -1,0 +1,185 @@
+#include <utils/utils.h>
+#include <memoria.h>
+
+int main(int argc, char* argv[]) {
+
+    pthread_t hilo_cliente_conexion_memoria;
+    pthread_t hilo_servidor_memoria;
+
+    LOGGER = log_create(LOGGER_PATH, MODULE_NAME, true, LOG_LEVEL_DEBUG);
+    //LOGGER = initialize_logger(LOGGER_PATH, MODULE_NAME);
+
+    inicializar_config(MODULE_CONFIG_PATH);
+    
+    info_conexion *info_conexion_filesystem = crear_conexion_cliente(IP_FILESYSTEM,FILESYSTEM_PORT,LOGGER);
+    info_conexion_servidor *info_servidor_memoria = crear_conexion_servidor(LISTENING_PORT,LOGGER);
+
+    pthread_create(&hilo_cliente_conexion_memoria, NULL, (void *) inicializar_cliente, info_conexion_filesystem);
+    pthread_create(&hilo_servidor_memoria,NULL,(void * )inicializar_server,info_servidor_memoria);
+    
+    pthread_join(hilo_cliente_conexion_memoria, &fd_socket);
+    pthread_join(hilo_servidor_memoria,NULL); 
+    
+    //void* espacio_memoria = malloc(sizeof(MEMORY_SIZE));
+
+    //t_list* particiones = esquema_particiones();
+
+
+    //Ejemplo para chars
+/*     t_paquete* paquete_prueba = crear_paquete();
+    char* mensaje = "holahola";
+    char* prueba[sizeof(mensaje)];
+
+    log_info(LOGGER, "El size del paquete es: %d", paquete_prueba->buffer->size);
+
+    agregar_a_buffer(paquete_prueba->buffer, mensaje, sizeof(mensaje));
+    log_info(LOGGER, "El size del paquete es: %d", paquete_prueba->buffer->size);
+    sacar_de_buffer(paquete_prueba->buffer, prueba, sizeof(mensaje));
+
+    log_info(LOGGER, "El valor del pid es: %s", prueba); */
+
+    //Ejemplo para int
+
+    t_paquete* paquete_prueba = crear_paquete();
+    int pid = 3;
+    int otro_pid;
+
+    log_info(LOGGER, "El size del paquete es: %d", paquete_prueba->buffer->size);
+
+    agregar_a_buffer(paquete_prueba->buffer, &pid, sizeof(int));
+    log_info(LOGGER, "El size del paquete es: %d", paquete_prueba->buffer->size);
+    //sacar_de_buffer(paquete_prueba->buffer, &otro_pid, sizeof(pid));
+
+    //log_info(LOGGER, "El valor del pid es: %d", otro_pid)
+
+    enviar_paquete(paquete_prueba, fd_socket);
+
+
+    return 0;
+}
+
+//la funcion read_config se ejecuta cuando se ejecuta initialize_config. La funcion initialize_config
+//esta en el utils.c
+
+void read_config(t_config* MODULE_CONFIG){
+    IP_FILESYSTEM = config_get_string_value(MODULE_CONFIG, "IP_FILESYSTEM");
+    FILESYSTEM_PORT = config_get_string_value(MODULE_CONFIG, "PUERTO_FILESYSTEM");
+    LISTENING_PORT = config_get_string_value(MODULE_CONFIG, "PUERTO_ESCUCHA");
+    MEMORY_SIZE = config_get_int_value(MODULE_CONFIG, "TAM_MEMORIA");
+    PATH_INSTRUCTIONS = config_get_string_value(MODULE_CONFIG, "PATH_INSTRUCCIONES");
+    RESPONSE_DELAY = config_get_int_value(MODULE_CONFIG, "RETARDO_RESPUESTA");
+    SCHEME = config_get_string_value(MODULE_CONFIG, "ESQUEMA");
+    SEARCH_ALGORITHM = config_get_string_value(MODULE_CONFIG, "ALGORITMO_BUSQUEDA");
+    PARTITIONS = config_get_array_value(MODULE_CONFIG, "PARTICIONES");
+    LOG_LEVEL = config_get_string_value(MODULE_CONFIG, "LOG_LEVEL");
+}
+
+t_list* esquema_particiones(){
+    if(strcmp(SCHEME, "FIJAS") == 0){
+        log_info(LOGGER, "La estructura de la memoria es de particiones fijas");
+        int i = 0;
+        t_list* particiones = list_create();
+        
+        int base_anterior = 0;
+        int tamanio_anterior = 0;
+        while(PARTITIONS[i] != NULL){
+            log_info(LOGGER, "Array posicion %d tiene el valor: %s", i, PARTITIONS[i]);
+            particion_memoria* particion = malloc(sizeof(particion_memoria));
+            //creo una lista de particiones para poder manejarlo con una estructura
+            particion->tamanio = atoi(PARTITIONS[i]);
+            particion->base = base_anterior + tamanio_anterior;
+            particion->ocupado = false;
+            list_add(particiones, particion);
+            //me muevo al proximo elemento
+            base_anterior = particion->base;
+            tamanio_anterior = particion->tamanio;
+            i++;
+        }
+        return particiones;
+        
+        //particion_memoria particiones[i];
+/*         for(int c=0; c<list_size(particiones); c++){
+            particion_memoria* particion = list_get(particiones, c);
+            log_info(LOGGER, "El valor de la base de la posicione %d es %d",c , particion->base);
+            log_info(LOGGER, "El valor de tamanio de la posicione %d es %d",c , particion->tamanio);
+            log_info(LOGGER, "La particion %d es %d",c , particion->ocupado);
+        } */
+
+    }else if(strcmp(SCHEME, "DINAMICAS") == 0){
+        log_info(LOGGER, "La estructura de la memoria es de particiones dinamicas");
+        t_list* particiones = list_create();
+        return particiones;
+    }else{
+        log_error(LOGGER, "No se reconoce el esquema de particiones");
+        t_list* particiones = list_create();
+        return particiones;
+    }
+
+}
+
+
+bool esta_libre(particion_memoria* particion){
+    return !particion->ocupado;
+}
+
+bool particion_menor(particion_memoria* a, particion_memoria* b){
+    return a->tamanio <= b->tamanio;
+}
+
+bool particion_mayor(particion_memoria* a, particion_memoria* b){
+    return a->tamanio >= b->tamanio;
+}
+
+int first_fit(int tamanio_a_asignar, t_list* particiones){
+    for(int i = 0; i<list_size(particiones); i++){
+        particion_memoria* particion = list_get(particiones, i);
+        if(!particion->ocupado && particion->tamanio >= tamanio_a_asignar){
+            return particion->base;
+        }
+    }
+    return -1;
+}
+
+int best_fit(int tamanio_a_asignar, t_list* particiones){
+    t_list* particiones_libres = list_filter(particiones, esta_libre);
+    list_sort(particiones_libres, particion_menor);
+    for(int i=0; i<list_size(particiones_libres); i++){
+        particion_memoria* particion = list_get(particiones_libres, i);
+        if(particion->tamanio >= tamanio_a_asignar){
+            return particion->base;
+        }
+    }
+    return -1;
+}
+
+int worst_fit(int tamanio_a_asignar, t_list* particiones){
+    t_list* particiones_libres = list_filter(particiones, esta_libre);
+    list_sort(particiones_libres, particion_mayor);
+    for(int i=0; i<list_size(particiones_libres); i++){
+        particion_memoria* particion = list_get(particiones_libres, i);
+        if(particion->tamanio >= tamanio_a_asignar){
+            return particion->base;
+        }
+    }
+    return -1;   
+}
+
+int algoritmo_busqueda(int tamanio, t_list* particiones){
+    int realizado;
+    if(strcmp(SEARCH_ALGORITHM, "BEST") == 0){
+        log_info(LOGGER, "El algoritmo de búsqueda es BEST FIT");
+        realizado = best_fit(tamanio,particiones);
+        return realizado;
+    }else if(strcmp(SEARCH_ALGORITHM, "WORST") ==0 ){
+        log_info(LOGGER, "El algoritmo de búsqueda es WORST FIT");
+        realizado = worst_fit(tamanio, particiones);
+        return realizado;
+    }else if(strcmp(SEARCH_ALGORITHM, "FIRST") == 0){
+        log_info(LOGGER, "El algoritmo de búsqueda es FIRST FIT");
+        realizado = first_fit(tamanio, particiones);
+        return realizado;
+    }else{
+        log_error(LOGGER, "No se reconoce el algoritmo de busqueda");
+        return -1;
+    }
+}
